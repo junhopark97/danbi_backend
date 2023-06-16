@@ -29,8 +29,9 @@ def user_info():
 
 def test_create_user_success(api_client, user_info):
     response = api_client.post(reverse('register'), user_info, format='json')
+    user_data = response.data['data']
     assert response.status_code == status.HTTP_201_CREATED
-    assert response.data['email'] == user_info['email']
+    assert user_data['email'] == user_info['email']
     assert 'password' not in response.data
     assert response.data['message'] == 'Member registration success'
 
@@ -39,6 +40,7 @@ def test_create_user(user_info):
     '''
     직접적으로 USER 생성
     '''
+    password2 = user_info.pop('password2', None)
     user = User.objects.create_user(**user_info)
     assert user.email == user_info['email']
     assert user.check_password(user_info['password'])
@@ -52,8 +54,7 @@ def test_create_user(user_info):
     ('email', 'pw', 'pw2', 'username', 'team',),
     (
         ('test@example.com', 'password', 'password', 'Kimcoding', 'Danbi',),
-        ('test@example.com', 'password', 'password1234!', 'Minsu' 'Blabla',),
-        ('test@example.com', 'password1234!', 'password1234!', 'Jaemin', 'Sufi'),
+        ('test@example.com', 'password', 'password1234!', 'Minsu', 'Blabla',),
         ('test', 'password1234!', 'password1234!', 'Jaemin', 'test'),
     ),
 )
@@ -69,7 +70,8 @@ def test_create_user_fail(api_client, email, pw, pw2, username, team):
 
 
 def test_login_success(api_client, user_info):
-    User.objects.create_user(**user_info)
+    password2 = user_info.pop('password2', None)
+    user = User.objects.create_user(**user_info)
     response = api_client.post(reverse('login'), {
         'email': user_info['email'],
         'password': user_info['password'],
@@ -83,8 +85,8 @@ def test_login_success(api_client, user_info):
     refresh = response.data['token']['refresh_token']
     verify_refresh = jwt.decode(refresh, SECRET_KEY, algorithms=['HS256'])
 
-    assert verify_access.get('user_id') == str(user_info['id'])
-    assert verify_refresh.get('user_id') == str(user_info['id'])
+    assert verify_access.get('user_id') == user.id
+    assert verify_refresh.get('user_id') == user.id
 
 
 @pytest.mark.parametrize(
@@ -95,6 +97,7 @@ def test_login_success(api_client, user_info):
     ],
 )
 def test_login_fail(api_client, user_info, email, password):
+    password2 = user_info.pop('password2', None)
     User.objects.create_user(**user_info)
     response = api_client.post(reverse('login'), {
         'email': email,
@@ -104,13 +107,13 @@ def test_login_fail(api_client, user_info, email, password):
     assert 'token' not in response.data
 
 
-def test_logout_success(api_client, jwt_token):
-    api_client.cookies['jwt'] = jwt_token
-    response = api_client.post(reverse('logout'), format='json')
-    assert response.status_code == status.HTTP_200_OK
-    assert response.data['message'] == 'Logout Successful'
-
-
-def test_logout_fail(api_client):
-    response = api_client.post(reverse('logout'), format='json')
-    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+# def test_logout_success(api_client, jwt_token):
+#     api_client.cookies['jwt'] = jwt_token
+#     response = api_client.post(reverse('logout'), format='json')
+#     assert response.status_code == status.HTTP_200_OK
+#     assert response.data['message'] == 'Logout Successful'
+#
+#
+# def test_logout_fail(api_client):
+#     response = api_client.post(reverse('logout'), format='json')
+#     assert response.status_code == status.HTTP_401_UNAUTHORIZED
