@@ -19,7 +19,8 @@ class User(AbstractUser):
     first_name = None
     last_name = None
 
-    email = models.EmailField(_('email address'), unique=True, help_text='Require')
+    email = models.EmailField('email', max_length=40, unique=True)
+    username = models.CharField(max_length=20, unique=False)
     team = models.CharField(max_length=10, choices=team_choices)
 
     USERNAME_FIELD = 'email'
