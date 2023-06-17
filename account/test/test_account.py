@@ -37,10 +37,7 @@ def test_create_user_success(api_client, user_info):
 
 
 def test_create_user(user_info):
-    '''
-    직접적으로 USER 생성
-    '''
-    password2 = user_info.pop('password2', None)
+    password2 = user_info.pop('password2')
     user = User.objects.create_user(**user_info)
     assert user.email == user_info['email']
     assert user.check_password(user_info['password'])
@@ -97,7 +94,7 @@ def test_login_success(api_client, user_info):
     ],
 )
 def test_login_fail(api_client, user_info, email, password):
-    password2 = user_info.pop('password2', None)
+    password2 = user_info.pop('password2')
     User.objects.create_user(**user_info)
     response = api_client.post(reverse('login'), {
         'email': email,
@@ -105,15 +102,3 @@ def test_login_fail(api_client, user_info, email, password):
     }, format='json')
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert 'token' not in response.data
-
-
-# def test_logout_success(api_client, jwt_token):
-#     api_client.cookies['jwt'] = jwt_token
-#     response = api_client.post(reverse('logout'), format='json')
-#     assert response.status_code == status.HTTP_200_OK
-#     assert response.data['message'] == 'Logout Successful'
-#
-#
-# def test_logout_fail(api_client):
-#     response = api_client.post(reverse('logout'), format='json')
-#     assert response.status_code == status.HTTP_401_UNAUTHORIZED
