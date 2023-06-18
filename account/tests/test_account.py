@@ -71,7 +71,7 @@ def test_create_user_fail(api_client, email, pw, pw2, username, team):
 
 
 def test_login_success(api_client, user_info):
-    password2 = user_info.pop('password2', None)
+    password2 = user_info.pop('password2')
     user = User.objects.create_user(**user_info)
     response = api_client.post(reverse('login'), {
         'email': user_info['email'],
