@@ -10,6 +10,50 @@ User = get_user_model()
 pytestmark = pytest.mark.django_db
 
 
+fail_payload1 = {
+        'team': [],
+        'title': '',
+        'content': '각 팀에 일을 분배',
+        'subtasks': [
+            {
+                'title': '흑연 가공',
+                'content': '좋은 품질의 흑연을 가공',
+                'team': [
+                    'Danbi',
+                    'Chullo'
+                ]
+            },
+            {
+                'title': '나무 가공',
+                'content': '좋은 목재를 가공',
+                'team': [
+                    'Sufi'
+                ]
+            },
+        ]
+    }
+
+fail_payload2 = {
+        'team': [],
+        'title': '연필 만들기',
+        'content': '각 팀에 일을 분배',
+        'subtasks': [
+            {
+                'title': '흑연 가공',
+                'content': '좋은 품질의 흑연을 가공',
+                'team': []
+            },
+            {
+                'title': '나무 가공',
+                'content': '좋은 목재를 가공',
+                'team': [
+                    'Sufi'
+                ]
+            },
+        ]
+    }
+
+
 @pytest.fixture
 def api_client():
     return APIClient()
@@ -120,9 +164,30 @@ def test_create_task_and_subtask(api_client, user_data, task_and_payload):
     assert subtask2.team == ['Sufi']
 
 
+@pytest.mark.parametrize(
+    ('payload',),
+    (
+        (fail_payload1,),
+        (fail_payload2,),
+    ),
+)
+def test_task_and_subtask_creation_failure(api_client, user_data, payload):
+    '''
+        Task와 Subtask 생성 실패
+    '''
+    user = user_data['data']
+    user_team = user_data['team']
+    access_token = f'Bearer {user_data["access_token"]}'
+    api_client.credentials(HTTP_AUTHORIZATION=access_token)
+
+    url = reverse('task-list')
+    response = api_client.post(url, payload, format='json')
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+
 def test_put_task_and_subtask(api_client, task_and_payload, create_task_with_subtasks):
     '''
-        Task와 SubTask 수정
+        Task와 Subtask 수정
     '''
     user_data = create_task_with_subtasks['user_data']
     task = create_task_with_subtasks['task']
@@ -146,6 +211,28 @@ def test_put_task_and_subtask(api_client, task_and_payload, create_task_with_sub
     for i, subtask in enumerate(subtasks):
         subtask.refresh_from_db()
         assert subtask.team == response.data['subtasks'][i]['team']
+
+
+@pytest.mark.parametrize(
+    ('payload',),
+    (
+        (fail_payload1,),
+        (fail_payload2,),
+    ),
+)
+def test_put_task_and_subtask_failure(api_client, create_task_with_subtasks, payload):
+    '''
+        Task와 Subtask 수정 실패 테스트
+    '''
+    user_data = create_task_with_subtasks['user_data']
+    task = create_task_with_subtasks['task']
+
+    access_token = f'Bearer {user_data["access_token"]}'
+    api_client.credentials(HTTP_AUTHORIZATION=access_token)
+
+    url = reverse('task-detail', kwargs={'pk': task.id})
+    response = api_client.put(url, fail_payload1, format='json')
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
 
 
 def test_get_task_and_subtask(api_client, create_task_with_subtasks):
@@ -174,9 +261,36 @@ def test_get_task_and_subtask(api_client, create_task_with_subtasks):
             assert subtask_data['content'] == subtask.content
 
 
+def test_get_task_and_subtask_failure(api_client, create_task_with_subtasks, user_data):
+    '''
+        Task 조회 실패
+    '''
+    task = create_task_with_subtasks['task']
+
+    other_user_data = {
+        'email': 'other@example.com',
+        'password': 'otherpassword',
+        'username': 'otheruser',
+        'team': 'OtherTeam',
+    }
+    other_user = User.objects.create_user(**other_user_data)
+    response = api_client.post(reverse('login'), {
+        'email': other_user_data['email'],
+        'password': other_user_data['password'],
+    }, format='json')
+    other_user_access_token = response.data['token']['access_token']
+
+    access_token = f'Bearer {other_user_access_token}'
+    api_client.credentials(HTTP_AUTHORIZATION=access_token)
+
+    url = reverse('task-detail', kwargs={'pk': task.id})
+    response = api_client.get(url)
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
 def test_update_subtask(api_client, create_task_with_subtasks):
     '''
-        SubTask.is_complete 수정
+        Subtask.is_complete 수정
     '''
     user_data = create_task_with_subtasks['user_data']
     task = create_task_with_subtasks['task']
@@ -197,9 +311,41 @@ def test_update_subtask(api_client, create_task_with_subtasks):
     assert subtask.is_complete is True
 
 
+def test_update_subtask_failure(api_client, create_task_with_subtasks, user_data):
+    '''
+        Subtask.is_complete 수정 실패
+    '''
+    task = create_task_with_subtasks['task']
+    subtask = task.subtasks.first()
+
+    other_user_data = {
+        'email': 'other@example.com',
+        'password': 'otherpassword',
+        'username': 'otheruser',
+        'team': 'OtherTeam',
+    }
+    other_user = User.objects.create_user(**other_user_data)
+    response = api_client.post(reverse('login'), {
+        'email': other_user_data['email'],
+        'password': other_user_data['password'],
+    }, format='json')
+    other_user_access_token = response.data['token']['access_token']
+
+    access_token = f'Bearer {other_user_access_token}'
+    api_client.credentials(HTTP_AUTHORIZATION=access_token)
+
+    url = reverse('subtask-detail', kwargs={'id': subtask.id})
+    data = {
+        'is_complete': True
+    }
+    response = api_client.patch(url, data, format='json')
+
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
 def test_delete_subtask(api_client, create_task_with_subtasks):
     '''
-        SubTask 삭제
+        Subtask 삭제
     '''
     user_data = create_task_with_subtasks['user_data']
     task = create_task_with_subtasks['task']
@@ -213,3 +359,32 @@ def test_delete_subtask(api_client, create_task_with_subtasks):
 
     assert response.status_code == status.HTTP_204_NO_CONTENT
     assert response.data['message'] == 'Subtask has been deleted.'
+
+
+def test_delete_subtask_failure(api_client, create_task_with_subtasks, user_data):
+    '''
+        Subtask 삭제 실패
+    '''
+    task = create_task_with_subtasks['task']
+    subtask = task.subtasks.first()
+
+    other_user_data = {
+        'email': 'other@example.com',
+        'password': 'otherpassword',
+        'username': 'otheruser',
+        'team': 'OtherTeam',
+    }
+    other_user = User.objects.create_user(**other_user_data)
+    response = api_client.post(reverse('login'), {
+        'email': other_user_data['email'],
+        'password': other_user_data['password'],
+    }, format='json')
+    other_user_access_token = response.data['token']['access_token']
+
+    access_token = f'Bearer {other_user_access_token}'
+    api_client.credentials(HTTP_AUTHORIZATION=access_token)
+
+    url = reverse('subtask-detail', kwargs={'id': subtask.id})
+    response = api_client.delete(url)
+
+    assert response.status_code == status.HTTP_404_NOT_FOUND
