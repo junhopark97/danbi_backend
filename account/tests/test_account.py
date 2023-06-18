@@ -19,10 +19,10 @@ def api_client():
 @pytest.fixture
 def user_info():
     return {
-        'email': 'test@example.com',
+        'email': 'tests@example.com',
         'password': 'password1234!',
         'password2': 'password1234!',
-        'username': 'test',
+        'username': 'tests',
         'team': 'Danbi',
     }
 
@@ -50,9 +50,9 @@ def test_create_user(user_info):
 @pytest.mark.parametrize(
     ('email', 'pw', 'pw2', 'username', 'team',),
     (
-        ('test@example.com', 'password', 'password', 'Kimcoding', 'Danbi',),
-        ('test@example.com', 'password', 'password1234!', 'Minsu', 'Blabla',),
-        ('test', 'password1234!', 'password1234!', 'Jaemin', 'test'),
+        ('tests@example.com', 'password', 'password', 'Kimcoding', 'Danbi',),
+        ('tests@example.com', 'password', 'password1234!', 'Minsu', 'Blabla',),
+        ('tests', 'password1234!', 'password1234!', 'Jaemin', 'tests'),
     ),
 )
 def test_create_user_fail(api_client, email, pw, pw2, username, team):
@@ -89,7 +89,7 @@ def test_login_success(api_client, user_info):
 @pytest.mark.parametrize(
     ('email', 'password'),
     [
-        pytest.param('test@example.com', 'password'),
+        pytest.param('tests@example.com', 'password'),
         pytest.param('test1@example.com', 'password1234!'),
     ],
 )
