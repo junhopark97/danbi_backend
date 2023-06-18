@@ -42,7 +42,7 @@ class TaskViewSet(viewsets.ModelViewSet):
 class SubTaskViewSet(viewsets.ModelViewSet):
     serializer_class = SubTaskSerializer
     permission_classes = (IsAuthenticated,)
-    http_method_names = ('get', 'patch', 'delete',)
+    http_method_names = ('patch', 'delete',)
     lookup_field = 'id'
 
     def get_queryset(self):
