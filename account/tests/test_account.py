@@ -27,24 +27,28 @@ def user_info():
     }
 
 
-def test_create_user_success(api_client, user_info):
-    response = api_client.post(reverse('register'), user_info, format='json')
-    user_data = response.data['data']
-    assert response.status_code == status.HTTP_201_CREATED
-    assert user_data['email'] == user_info['email']
-    assert 'password' not in response.data
-    assert response.data['message'] == 'Member registration success'
-
-
 def test_create_user(user_info):
     password2 = user_info.pop('password2')
     user = User.objects.create_user(**user_info)
+
     assert user.email == user_info['email']
     assert user.check_password(user_info['password'])
     assert user.username == user_info['username']
     assert user.team == user_info['team']
     assert not user.is_staff
     assert not user.is_superuser
+
+
+def test_create_user_success(api_client, user_info):
+    response = api_client.post(reverse('register'), user_info, format='json')
+    user_data = response.data['data']
+    user = User.objects.get(email=user_data['email'])
+
+    assert response.status_code == status.HTTP_201_CREATED
+    assert user_data['email'] == user_info['email']
+    assert user.email == user_info['email']
+    assert 'password' not in response.data
+    assert response.data['message'] == 'Member registration success'
 
 
 @pytest.mark.parametrize(
@@ -96,6 +100,7 @@ def test_login_success(api_client, user_info):
 def test_login_fail(api_client, user_info, email, password):
     password2 = user_info.pop('password2')
     User.objects.create_user(**user_info)
+
     response = api_client.post(reverse('login'), {
         'email': email,
         'password': password,
