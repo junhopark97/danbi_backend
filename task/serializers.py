@@ -4,7 +4,6 @@ from .models import Task, SubTask
 
 class SubTaskSerializer(serializers.ModelSerializer):
     task = serializers.PrimaryKeyRelatedField(read_only=True)
-    team = serializers.ListField(child=serializers.CharField(max_length=50), required=True)
 
     def validate_team(self, value):
         if not value:
