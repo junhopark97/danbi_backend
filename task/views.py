@@ -29,14 +29,8 @@ class TaskViewSet(viewsets.ModelViewSet):
 
         if user != instance.create_user:
             raise PermissionDenied('You do not have permission to edit this Task.')
-        super().update(request, *args, **kwargs)
 
-        return Response(
-            {
-                'message': 'Task modification succeeded.'
-            },
-            status=status.HTTP_200_OK
-        )
+        return super().update(request, *args, **kwargs)
 
 
 class SubTaskViewSet(viewsets.ModelViewSet):
