@@ -9,6 +9,11 @@ class SubTaskSerializer(serializers.ModelSerializer):
     def validate_team(self, value):
         if not value:
             raise serializers.ValidationError('A value is required for the team field.')
+
+        teams = ('Danbi', 'Darae', 'Blabla', 'Chullo', 'Ttangi', 'Haitai', 'Sufi')
+        for team in value:
+            if team not in teams:
+                raise serializers.ValidationError(f'Team "{team}" is not a valid choice.')
         return value
 
     class Meta:
