@@ -1,5 +1,10 @@
 # danbi_backend
 
+<h2>
+    <a href="https://www.notion.so/Danbi-refectoring-09bcfe081df940d4a278a441f0ec658f?pvs=4">
+        <strong>👉 Refectoring</strong>
+    </a>
+</h2>
 
 ## 기술 스택
 * python == 3.10.4
